@@ -33,3 +33,16 @@ class ModelTests(TestCase):
         for email, excepted in smple_emails:
             user = get_user_model().objects.create_user(email, 'test123')
             self.assertEqual(user.email, excepted)
+
+    def test_new_user_without_email_raises_error(self):
+        """Test creating user without email raises value error"""
+
+        with self.assertRaises(ValueError):
+            get_user_model().objects.create_user(None, 'test123')
+
+    def test_creat_superuser(self):
+        """Test creating a new superuser"""
+
+        user = get_user_model().objects.create_superuser('test@example.com', 'test123')
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(user.is_staff)
