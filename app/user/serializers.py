@@ -2,7 +2,8 @@
 Serializers for the user API View
 """
 
-from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate, get_user_model
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 
@@ -56,3 +57,50 @@ class UserSerializer(serializers.ModelSerializer):
             User: A new User instance with encrypted password storage
         """
         return get_user_model().objects.create_user(**validated_data)
+
+    def update(self, instance, validated_data):
+        """Update and return user."""
+        password = validated_data.pop('password', None)
+        user = super().update(instance, validated_data)
+
+        if password:
+            user.set_password(password)
+            user.save()
+
+        return user
+
+
+class AuthTokenSerializer(serializers.Serializer):
+    """Serializer for the user auth token"""
+    email = serializers.EmailField()
+    password = serializers.CharField(
+        style={'input_type': 'password'},
+        trim_whitespace=False,
+    )
+
+    def validate(self, attrs):
+        """Validate and authenticate the user
+
+        Args:
+            attrs (dict): The attributes to validate, typically includes 'email' and 'password'.
+
+        Returns:
+            dict: The validated attributes
+            with an additional 'user' key if authentication is successful.
+
+        Raises:
+            serializers.ValidationError: If authentication fails with the provided credentials.
+        """
+        email = attrs.get('email')
+        password = attrs.get('password')
+        # Attempt to authenticate the user with the provided email and password
+        user = authenticate(
+            request=self.context.get('request'),
+            username=email,
+            password=password,
+        )
+        if not user:
+            msg = _("Unable to authenticate with provided credentials")
+            raise serializers.ValidationError(msg, code='authentication')
+        attrs['user'] = user
+        return attrs
