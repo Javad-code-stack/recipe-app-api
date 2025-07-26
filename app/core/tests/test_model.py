@@ -1,7 +1,10 @@
 """
 Test for the models
 """
+from decimal import Decimal
 
+# when we want to test more than 1 we have to do this
+from core import models
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
@@ -46,3 +49,22 @@ class ModelTests(TestCase):
         user = get_user_model().objects.create_superuser('test@example.com', 'test123')
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
+
+    def test_create_recipe(self):
+        """Test creating recipe successful"""
+
+        # Create a user so we can assign it to our recipe later as the owner of recipe
+        user = get_user_model().objects.create_user(
+            'test@example.com',
+            'testpass123'
+        )
+        # Create the recipe useing the model we have
+        recipe = models.Recipe.objects.create(
+            user=user,
+            title='Sample recipe name',
+            description='Sample recipe description',
+            time_minutes=5,
+            price=Decimal('5.50'),
+        )
+        # Model supposed to return the title as string so we compare it later
+        self.assertEqual(str(recipe), recipe.title)
