@@ -12,7 +12,7 @@ recipe-related API endpoints.
 
 from rest_framework import serializers  # Core module for DRF serializers
 
-from core.models import Recipe, Tag  # Import Recipe model from core app
+from core.models import Recipe, Tag, Ingredient  # Import Recipe model from core app
 
 
 # Importing serializers module from Django REST Framework (DRF)
@@ -20,6 +20,22 @@ from core.models import Recipe, Tag  # Import Recipe model from core app
 
 # Accessing the Recipe model defined in the core application module
 # This establishes the connection between the database model and API representation
+
+
+class IngredientSerializer(serializers.ModelSerializer):
+    """
+    TagSerializer
+    -------------
+    Parameters: None
+    Returns: None
+    """
+
+    class Meta:
+        """Meta"""
+
+        model = Ingredient
+        fields = ["id", "name"]
+        read_only_fields = ["id"]
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -67,6 +83,8 @@ class RecipeSerializer(serializers.ModelSerializer):
     # Nested serializer for tags - allows tags to be included with recipes
     tags = TagSerializer(many=True, required=False)
 
+    ingredients = IngredientSerializer(many=True, required=False)
+
     class Meta:
         """
         Metaclass defining serializer configuration
@@ -87,6 +105,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             "price",
             "link",
             "tags",
+            "ingredients",
         ]  # Fields to include
         # Defines the subset of model fields exposed through the API
         # These represent the most essential information about a recipe
@@ -106,6 +125,16 @@ class RecipeSerializer(serializers.ModelSerializer):
                 **tag,
             )
             recipe.tags.add(tag_obj)
+
+    def _get_or_create_ingredients(self, ingredients, recipe):
+        """Handle getting or creating ingredients as needed"""
+        auth_user = self.context["request"].user
+        for ingredient in ingredients:
+            ingredient_obj, create = Ingredient.objects.get_or_create(
+                user=auth_user,
+                **ingredient,
+            )
+            recipe.ingredients.add(ingredient_obj)
 
     def create(self, validated_data):
         """
@@ -131,9 +160,13 @@ class RecipeSerializer(serializers.ModelSerializer):
         """
         # Remove tags from validated_data and assign it to a variable called 'tags'
         tags = validated_data.pop("tags", [])
+        ingredients = validated_data.pop("ingredients", [])
+
         # With the rest of the data(except tags) we create a new recipe
         recipe = Recipe.objects.create(**validated_data)
         self._get_or_create_tags(tags, recipe)
+        self._get_or_create_ingredients(ingredients, recipe)
+
         return recipe
 
     def update(self, instance, validated_data):
@@ -142,9 +175,15 @@ class RecipeSerializer(serializers.ModelSerializer):
         ------
         """
         tags = validated_data.pop("tags", None)
+        ingredients = validated_data.pop("ingredients", None)
+
         if tags is not None:
             instance.tags.clear()
             self._get_or_create_tags(tags, instance)
+        if ingredients is not None:
+            instance.ingredients.clear()
+            self._get_or_create_ingredients(ingredients, instance)
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 

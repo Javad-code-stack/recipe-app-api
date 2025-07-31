@@ -37,7 +37,7 @@ from rest_framework.permissions import (
 from rest_framework import viewsets, mixins
 
 # Import local application components
-from core.models import Recipe, Tag  # Database model for storing recipes
+from core.models import Recipe, Tag, Ingredient  # Database model for storing recipes
 from recipe import (
     serializer,
 )  # Module containing serializers for converting data between Python/JSON
@@ -120,19 +120,31 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
-class TagViewSet(
+class BaseRecipeAttrViewSet(
     mixins.DestroyModelMixin,
     mixins.UpdateModelMixin,
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-    """Manage tags in the database"""
+    """Base viewSet for recipe attributes"""
 
-    serializer_class = serializer.TagSerializer
-    queryset = Tag.objects.all()
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Filter queryset to authenticated user"""
         return self.queryset.filter(user=self.request.user).order_by("-name")
+
+
+class TagViewSet(BaseRecipeAttrViewSet):
+    """Manage tags in the database"""
+
+    serializer_class = serializer.TagSerializer
+    queryset = Tag.objects.all()
+
+
+class IngredientViewSet(BaseRecipeAttrViewSet):
+    """Manage ingredients in the database"""
+
+    serializer_class = serializer.IngredientSerializer
+    queryset = Ingredient.objects.all()
