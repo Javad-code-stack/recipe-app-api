@@ -3,60 +3,62 @@
 
 # Services section defines all the containers we need to run
 services:
-    # The main application service
-    app:
-        # How to build the Docker image for our app
-        build:
-            # Build context is current directory (where Dockerfile is)
-            context: .
-            # Build arguments - here we specify DEV=true for development mode
-            args:
-                - DEV=true
+  # The main application service
+  app:
+    # How to build the Docker image for our app
+    build:
+      # Build context is current directory (where Dockerfile is)
+      context: .
+      # Build arguments - here we specify DEV=true for development mode
+      args:
+        - DEV=true
 
-        # Port mapping - connect port 8000 on host machine to container's port 8000
-        ports:
-            - "8000:8000"
+    # Port mapping - connect port 8000 on host machine to container's port 8000
+    ports:
+      - "8000:8000"
 
-        # Volumes - share files between host and container
-        volumes:
-            # Mount our app code into container for live updates
-            - "./app:/app"
-            # Use local flake8 config inside container
-            - ./.flake8:/.flake8
+    # Volumes - share files between host and container
+    volumes:
+      # Mount our app code into container for live updates
+      - "./app:/app"
+      - dev-static-data:/vol/web
+      # Use local flake8 config inside container
+      - ./.flake8:/.flake8
 
-        # Command to run when container starts
-        command: >
-            sh -c "python manage.py wait_for_db &&
-                    python manage.py migrate &&
-                    python manage.py runserver 0.0.0.0:8000"
+    # Command to run when container starts
+    command: >
+      sh -c "python manage.py wait_for_db &&
+              python manage.py migrate &&
+              python manage.py runserver 0.0.0.0:8000"
 
-        # Environment variables for database connection
-        environment:
-            - DB_HOST=db # Database hostname
-            - DB_NAME=devdb # Database name
-            - DB_USER=devuser # Database user
-            - DB_PASSWORD=changeme # Database password
+    # Environment variables for database connection
+    environment:
+      - DB_HOST=db # Database hostname
+      - DB_NAME=devdb # Database name
+      - DB_USER=devuser # Database user
+      - DB_PASSWORD=changeme # Database password
 
-        # This service depends on the db service being available
-        depends_on:
-            - db
+    # This service depends on the db service being available
+    depends_on:
+      - db
 
-    # PostgreSQL database service
-    db:
-        # Use official PostgreSQL image
-        image: postgres:17.5-alpine
+  # PostgreSQL database service
+  db:
+    # Use official PostgreSQL image
+    image: postgres:17.5-alpine
 
-        # Volume to persist database data
-        volumes:
-            - dev-db-date:/var/lib/postgresql/data
+    # Volume to persist database data
+    volumes:
+      - dev-db-date:/var/lib/postgresql/data
 
-        # Database environment settings
-        environment:
-            - POSTGRES_DB=devdb # Create this database
-            - POSTGRES_USER=devuser # Create this user
-            - POSTGRES_PASSWORD=changeme # Set password for user
+    # Database environment settings
+    environment:
+      - POSTGRES_DB=devdb # Create this database
+      - POSTGRES_USER=devuser # Create this user
+      - POSTGRES_PASSWORD=changeme # Set password for user
 
 # Named volumes must be listed at the bottom
 volumes:
-    # Persistent volume for database data
-    dev-db-date:
+  # Persistent volume for database data
+  dev-db-date:
+  dev-static-data:

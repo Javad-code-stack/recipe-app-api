@@ -51,10 +51,10 @@ ARG DEV=false
 RUN python -m venv /py && \
     /py/bin/pip install --upgrade pip && \
     # Install database connection tools
-    apk add --update --no-cache postgresql-client && \
+    apk add --update --no-cache postgresql-client jpeg-dev && \
     # Install temporary tools needed for some package installations
     apk add --update --no-cache --virtual .tmp-build-deps \
-    build-base postgresql-dev musl-dev && \
+    build-base postgresql-dev musl-dev zlib zlib-dev && \
     # Install our main Python packages
     /py/bin/pip install -r /tmp/requirements.txt && \
     # Only install extra development tools if asked
@@ -69,7 +69,12 @@ RUN python -m venv /py && \
     adduser \
     --disabled-password \
     --no-create-home \
-    django-user
+    django-user && \
+    mkdir -p /vol/web/media/uploads && \
+    mkdir -p /vol/web/static && \
+    chown -R django-user:django-user /vol/web && \
+    chmod -R 775 /vol/web
+
 
 # Make our Python packages available in the system path
 ENV PATH="/py/bin:$PATH"

@@ -221,3 +221,13 @@ class RecipeDetailSerializer(RecipeSerializer):
         # Adds 'description' field to the existing set of fields from parent
         # Provides richer information for detailed recipe representation
         # The extension pattern avoids duplication while maintaining flexibility
+
+
+class RecipeImageSerializer(serializers.ModelSerializer):
+    """Serializer for uploading recipe images"""
+
+    class Meta:
+        model = Recipe
+        fields = ["id", "image"]
+        read_only_fields = ["id"]
+        extra_kwargs = {"image": {"required": "True"}}

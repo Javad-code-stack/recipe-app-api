@@ -7,6 +7,8 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
+from unittest.mock import patch
+
 # when we want to test more than 1 we have to do this
 from core import models
 
@@ -85,3 +87,12 @@ class ModelTests(TestCase):
         ingredient = models.Ingredient.objects.create(user=user, name="Ingredient1")
 
         self.assertEqual(str(ingredient), ingredient.name)
+
+    @patch("core.models.uuid.uuid4")
+    def test_recipe_file_name_uuid(self, mock_uuid):
+        """Test generating Image path"""
+        uuid = "test-uuid"
+        mock_uuid.return_value = uuid
+        file_path = models.recipe_image_file_path(None, "example.jpg")
+
+        self.assertEqual(file_path, f"uploads/recipe/{uuid}.jpg")
